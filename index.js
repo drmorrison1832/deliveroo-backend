@@ -1,10 +1,23 @@
 const express = require("express");
 const cors = require("cors");
+const axios = require("axios");
+const dotenv = require("dotenv");
+
+dotenv.config();
+
+// axios.get(
+//   "https://lereacteur-bootcamp-api.herokuapp.com/api/deliveroo/menu/paris/3eme-temple/sub-arc-subway-rambuteau?day=today&geohash=u09wj8rk5bqr&time=ASAP",
+//   {
+//     headers: {
+//       Authorization: `Bearer ${process.env.LE_REACTEUR_API_KEY}`,
+//     },
+//   }
+// );
 
 const app = express();
 app.use(cors());
 
-app.get("/", (req, res) => {
+app.get("/simple", (req, res) => {
   return res.json({
     restaurant: {
       path: "Le Pain Quotidien",
