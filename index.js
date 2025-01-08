@@ -1,21 +1,64 @@
-const express = require("express");
-const cors = require("cors");
-const axios = require("axios");
 const dotenv = require("dotenv");
-
 dotenv.config();
 
-// axios.get(
-//   "https://lereacteur-bootcamp-api.herokuapp.com/api/deliveroo/menu/paris/3eme-temple/sub-arc-subway-rambuteau?day=today&geohash=u09wj8rk5bqr&time=ASAP",
-//   {
-//     headers: {
-//       Authorization: `Bearer ${process.env.LE_REACTEUR_API_KEY}`,
-//     },
-//   }
-// );
+const axios = require("axios");
 
+const cors = require("cors");
+
+const express = require("express");
 const app = express();
 app.use(cors());
+
+let restaurantData = {};
+let categoriesData = [];
+
+app.get("/deliveroo", async (req, res) => {
+  try {
+    await axios
+      .get(
+        "https://lereacteur-bootcamp-api.herokuapp.com/api/deliveroo/menu/paris/3eme-temple/sub-arc-subway-rambuteau?day=today&geohash=u09wj8rk5bqr&time=ASAP",
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.LE_REACTEUR_API_KEY}`,
+          },
+        }
+      )
+      .then((response) => {
+        restaurantData.name = response.data.meta.metatags.title;
+        restaurantData.picture = response.data.meta.metatags.image;
+        restaurantData.description =
+          response.data.meta.metatags.descriptionSocial;
+
+        categoriesData = response.data.meta.categories.map((cat, index) => {
+          return { name: cat.name, id: cat.id, meals: [] };
+        });
+
+        const allMeals = response.data.items;
+
+        for (let meal of allMeals) {
+          for (let cat of categoriesData) {
+            if (meal.categoryId === cat.id) {
+              cat.meals.push({
+                title: meal.name,
+                price: meal.price.fractional / 100,
+                description: meal.description,
+                id: meal.id,
+                picture: meal.image ? meal.image.url : "",
+                popular: meal.popular,
+              });
+            }
+          }
+        }
+      });
+
+    return res.json({
+      restaurant: restaurantData,
+      categories: categoriesData,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+});
 
 app.get("/simple", (req, res) => {
   return res.json({
@@ -428,17 +471,6 @@ app.get("/simple", (req, res) => {
     ],
   });
 });
-
-// Northflank va nous fournir une variable process.env.PORT
-// if (process.env.PORT) {
-//   app.listen(process.env.PORT, () => {
-//     console.log("Server started");
-//   });
-// } else {
-//   app.listen(3200, () => {
-//     console.log("Server started");
-//   });
-// }
 
 app.listen(process.env.PORT || 3200, () => {
   console.log("Server started");
